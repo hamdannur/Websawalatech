@@ -1,31 +1,122 @@
+import { useEffect, useRef, useCallback } from "react";
+import Matter from "matter-js";
+
 const industries = [
-  { label: "Small Business", color: "#4ade80", rotate: "rotate-[13deg]" },
-  { label: "Corporate", color: "#c084fc", rotate: "rotate-[-12deg]" },
-  { label: "E-Commerce Store", color: "#facc15", rotate: "rotate-[4deg]" },
-  { label: "Nonprofit", color: "#a3e635", rotate: "rotate-[-6deg]" },
-  { label: "Consulting Firm", color: "#22d3ee", rotate: "rotate-[10deg]" },
-  { label: "Corporate", color: "#e879f9", rotate: "rotate-[-11deg]" },
+  { label: "Small Business",   color: "#4ade80" },
+  { label: "Corporate",        color: "#c084fc" },
+  { label: "E-Commerce Store", color: "#facc15" },
+  { label: "Nonprofit",        color: "#a3e635" },
+  { label: "Consulting Firm",  color: "#22d3ee" },
+  { label: "Creative Agency",  color: "#e879f9" },
+  { label: "Technology",       color: "#60a5fa" },
+  { label: "Healthcare",       color: "#f87171" },
+  { label: "Education",        color: "#fb923c" },
+  { label: "Finance",          color: "#a78bfa" },
 ];
 
+const PILL_H = 54;
+const H_PAD = 32;
+const CHAR_W = 14.5;
+
+function getPillWidth(label: string) {
+  return Math.max(130, Math.round(label.length * CHAR_W + H_PAD * 2));
+}
+
+function getTextColor(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? "#1f2937" : "#ffffff";
+}
+
 export function IndustriesSection() {
+  const sectionRef  = useRef<HTMLDivElement>(null);
+  const arenaRef    = useRef<HTMLDivElement>(null);
+  const pillRefs    = useRef<(HTMLDivElement | null)[]>([]);
+  const engineRef   = useRef<Matter.Engine | null>(null);
+  const rafRef      = useRef<number>(0);
+  const hasStarted  = useRef(false);
+
+  const startPhysics = useCallback(() => {
+    const arena = arenaRef.current;
+    if (!arena || hasStarted.current) return;
+    hasStarted.current = true;
+
+    const W = arena.clientWidth;
+    const H = arena.clientHeight;
+
+    const engine = Matter.Engine.create({ gravity: { y: 1.8 } });
+    engineRef.current = engine;
+
+    const ground = Matter.Bodies.rectangle(W / 2, H + 25, W + 200, 50, { isStatic: true, friction: 0.6, restitution: 0.25 });
+    const wallL  = Matter.Bodies.rectangle(-30,   H / 2, 60, H * 4,  { isStatic: true });
+    const wallR  = Matter.Bodies.rectangle(W + 30, H / 2, 60, H * 4, { isStatic: true });
+
+    const cols = Math.max(3, Math.floor(W / 240));
+    const pillBodies = industries.map((ind, i) => {
+      const pw = getPillWidth(ind.label);
+      const col = i % cols;
+      const x   = ((col + 0.5) / cols) * W + (Math.random() - 0.5) * 60;
+      const y   = -PILL_H - Math.floor(i / cols) * 130 - Math.random() * 50;
+      return Matter.Bodies.rectangle(x, y, pw, PILL_H, {
+        restitution: 0.35,
+        friction:    0.55,
+        frictionAir: 0.018,
+        angle: (Math.random() - 0.5) * 0.5,
+      });
+    });
+
+    Matter.World.add(engine.world, [ground, wallL, wallR, ...pillBodies]);
+
+    const tick = () => {
+      Matter.Engine.update(engine, 1000 / 60);
+      pillBodies.forEach((body, i) => {
+        const el = pillRefs.current[i];
+        if (!el) return;
+        const pw = getPillWidth(industries[i].label);
+        el.style.transform = `translate(${body.position.x - pw / 2}px, ${body.position.y - PILL_H / 2}px) rotate(${body.angle}rad)`;
+      });
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) startPhysics(); },
+      { threshold: 0.2 }
+    );
+    obs.observe(section);
+
+    return () => {
+      obs.disconnect();
+      cancelAnimationFrame(rafRef.current);
+      if (engineRef.current) Matter.Engine.clear(engineRef.current);
+    };
+  }, [startPhysics]);
+
   return (
-    <section className="w-full bg-[#2563eb] relative overflow-hidden">
+    <section ref={sectionRef} className="w-full bg-[#2563eb] relative overflow-hidden">
       {/* Decorative side tabs */}
       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-[144px] overflow-hidden">
-        <svg width="144" height="16" viewBox="0 0 144 16" fill="none" className="-rotate-90 origin-center" style={{ transformOrigin: "72px 8px" }}>
+        <svg width="144" height="16" viewBox="0 0 144 16" fill="none"
+          className="-rotate-90 origin-center" style={{ transformOrigin: "72px 8px" }}>
           <path d="M0 0L144 2.59028e-07L125.429 16H18.5714L0 0Z" fill="#60A5FA" />
         </svg>
       </div>
       <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-[144px] overflow-hidden">
-        <svg width="144" height="16" viewBox="0 0 144 16" fill="none" className="rotate-90 scale-y-[-1] origin-center" style={{ transformOrigin: "72px 8px" }}>
+        <svg width="144" height="16" viewBox="0 0 144 16" fill="none"
+          className="rotate-90 scale-y-[-1] origin-center" style={{ transformOrigin: "72px 8px" }}>
           <path d="M0 0L144 2.59028e-07L125.429 16H18.5714L0 0Z" fill="#60A5FA" />
         </svg>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-[20px] py-[100px] flex flex-col gap-[40px] items-center">
+      <div className="max-w-[1440px] mx-auto px-[20px] py-[100px] flex flex-col gap-[48px] items-center">
         {/* Header */}
         <div className="flex flex-col gap-6 items-center text-center max-w-[748px]">
-          {/* Sawala logo mark */}
           <svg width="38" height="24" viewBox="0 0 38 24" fill="none">
             <path
               clipRule="evenodd"
@@ -34,44 +125,61 @@ export function IndustriesSection() {
               fillRule="evenodd"
             />
           </svg>
-          <p
-            className="text-white text-[16px] leading-[24px]"
-            style={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}
-          >
+
+          <p className="text-white text-[16px] leading-[24px]"
+             style={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}>
             Industries We Serve
           </p>
-          <h2
-            className="text-white text-[30px] leading-normal tracking-[-0.6px]"
-            style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500 }}
-          >
+
+          <h2 className="text-white text-[30px] leading-normal tracking-[-0.6px]"
+              style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500 }}>
             We create and accelerate solution with{" "}
-            <span className="text-white font-bold">smart technology</span>
+            <span style={{ fontWeight: 700 }}>smart technology</span>
           </h2>
-          <p
-            className="text-white text-[16px] leading-[24px]"
-            style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400 }}
-          >
-            We help organizations solve complex challenges and build systems that deliver measurable impact. Our focus is not only on delivering technology, but on ensuring it creates long-term value.
+
+          <p className="text-white text-[16px] leading-[24px]"
+             style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400 }}>
+            We help organizations solve complex challenges and build systems that deliver measurable
+            impact. Our focus is not only on delivering technology, but on ensuring it creates
+            long-term value.
           </p>
         </div>
 
-        {/* Industry tags */}
-        <div className="flex flex-wrap gap-4 justify-center mt-4">
-          {industries.map((ind, i) => (
-            <div key={i} className={`${ind.rotate} inline-block`}>
+        {/* Physics arena — pills fall in from the top */}
+        <div
+          ref={arenaRef}
+          className="relative w-full overflow-hidden"
+          style={{ height: 420 }}
+        >
+          {industries.map((ind, i) => {
+            const pw = getPillWidth(ind.label);
+            return (
               <div
-                className="px-5 py-2.5 rounded-[999px] flex items-center justify-center"
-                style={{ backgroundColor: ind.color }}
+                key={i}
+                ref={(el) => { pillRefs.current[i] = el; }}
+                className="absolute top-0 left-0 flex items-center justify-center rounded-full whitespace-nowrap select-none"
+                style={{
+                  width:           pw,
+                  height:          PILL_H,
+                  backgroundColor: ind.color,
+                  willChange:      "transform",
+                  transform:       `translate(0px, -${PILL_H + i * 80}px)`,
+                }}
               >
                 <span
-                  className="text-white text-[30px] leading-normal tracking-[-0.6px] whitespace-nowrap"
-                  style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500 }}
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 500,
+                    fontSize:   "22px",
+                    letterSpacing: "-0.44px",
+                    color: getTextColor(ind.color),
+                  }}
                 >
                   {ind.label}
                 </span>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
