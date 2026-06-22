@@ -82,6 +82,11 @@ export function InsightsSection() {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
+  const STEP = 341 + 28; // card width + gap
+
+  const scrollPrev = () => sliderRef.current?.scrollBy({ left: -STEP, behavior: "smooth" });
+  const scrollNext = () => sliderRef.current?.scrollBy({ left: STEP, behavior: "smooth" });
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!sliderRef.current) return;
     setIsDragging(true);
@@ -111,43 +116,53 @@ export function InsightsSection() {
       {/* ── Desktop ── */}
       <section className="hidden lg:block w-full bg-white overflow-hidden">
         <div className="max-w-[1440px] mx-auto flex min-h-[748px]">
-          {/* Left panel */}
-          <div className="bg-[#eff6ff] flex flex-col items-start justify-between p-[32px] relative rounded-[20px] w-[490px] shrink-0 h-[532px] m-[100px] overflow-clip">
-            <div className="flex flex-col gap-[16px] w-full">
-              <p className="font-semibold leading-[56px] text-[#1f2937] text-[48px]" style={{ fontFamily: "'Inter', sans-serif" }}>Featured Insights</p>
-              <p className="font-normal leading-[24px] text-[#4b5563] text-[16px]" style={{ fontFamily: "'Inter', sans-serif" }}>Selected articles based on current topics and relevant industry discussions.</p>
+          {/* Left panel — notch boolean-subtracted using exact design SVG path (400×532) */}
+          <div className="relative w-[400px] shrink-0 h-[532px] m-[60px]">
+            {/* Card background — path from noth.svg, exact 1:1 match */}
+            <svg className="absolute inset-0 w-full h-full" fill="none" viewBox="0 0 400 532">
+              <path
+                d="M370 0H30C13.4315 0 0 13.4315 0 30V502C0 518.569 13.4315 532 30 532H226C242.569 532 256 518.569 256 502V472.5C256 455.931 269.431 442.5 286 442.5H370C386.569 442.5 400 429.069 400 412.5V30C400 13.4315 386.569 0 370 0Z"
+                fill="#eff6ff"
+              />
+            </svg>
+
+            {/* Card content */}
+            <div className="absolute inset-0 flex flex-col items-start p-[32px]">
+              <div className="flex flex-col gap-[16px] w-full">
+                <p className="font-semibold leading-[56px] text-[#1f2937] text-[48px]" style={{ fontFamily: "'Inter', sans-serif" }}>Featured Insights</p>
+                <p className="font-normal leading-[24px] text-[#4b5563] text-[16px]" style={{ fontFamily: "'Inter', sans-serif" }}>Selected articles based on current topics and relevant industry discussions.</p>
+              </div>
             </div>
-            <div className="flex gap-[4px] items-center justify-center overflow-clip px-[8px] relative rounded-[16px] shrink-0 w-[220px] mb-6 z-10">
+
+            {/* Explore More button — bottom aligned with nav pill center (bottom:19 = pill center at 44px from bottom) */}
+            <div className="absolute flex gap-[4px] items-center justify-center overflow-clip px-[8px] rounded-[16px] w-[148px] z-10" style={{ bottom: 19, left: 32 }}>
               <div className="absolute bg-transparent inset-0 rounded-[16px]">
                 <div aria-hidden className="absolute border border-[#2563eb] border-solid inset-0 pointer-events-none rounded-[16px]" />
               </div>
               <div className="flex items-center justify-center min-h-[50px] shrink-0">
-                <span className="font-semibold text-[#2563eb] text-[16px] leading-[24px] whitespace-nowrap" style={{ fontFamily: "'Inter', sans-serif" }}>Explore Featured Insight</span>
+                <span className="font-semibold text-[#2563eb] text-[16px] leading-[24px] whitespace-nowrap" style={{ fontFamily: "'Inter', sans-serif" }}>Explore More</span>
               </div>
             </div>
-            <div className="absolute bottom-0 right-0 w-[270.25px] h-[130px]">
-              <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 270.25 130">
-                <path d={svgPaths.pd31ab80} fill="white" />
-              </svg>
-            </div>
-            {/* Nav pill */}
-            <div className="absolute bg-white rounded-full z-10" style={{ bottom: 17, right: 10 }}>
+
+            {/* Nav pill — centered in notch cavity (x:256–400, y:442.5–532) */}
+            <div className="absolute bg-white rounded-full" style={{ bottom: 23, right: 27 }}>
               <div className="flex items-center overflow-clip rounded-[inherit]">
-                <button className="flex items-center justify-center p-[11px] hover:bg-gray-100 transition-colors">
+                <button onClick={scrollPrev} className="flex items-center justify-center p-[11px] hover:bg-gray-100 transition-colors">
                   <ChevronLeft size={20} className="text-[#9CA3AF]" strokeWidth={2} />
                 </button>
                 <div className="w-px self-stretch bg-[#e5e7eb]" />
-                <button className="flex items-center justify-center p-[11px] hover:bg-gray-100 transition-colors">
+                <button onClick={scrollNext} className="flex items-center justify-center p-[11px] hover:bg-gray-100 transition-colors">
                   <ChevronRight size={20} className="text-[#9CA3AF]" strokeWidth={2} />
                 </button>
               </div>
               <div aria-hidden className="absolute inset-[-0.5px] border border-[#d1d5db] rounded-full pointer-events-none" />
             </div>
           </div>
+
           {/* Article cards */}
           <div
             ref={sliderRef}
-            className={`flex-1 py-[108px] pr-[61px] flex gap-7 items-start overflow-x-auto hide-scrollbar cursor-grab select-none ${isDragging ? "cursor-grabbing" : ""}`}
+            className={`flex-1 py-[60px] pr-[40px] flex gap-7 items-start overflow-x-auto hide-scrollbar cursor-grab select-none ${isDragging ? "cursor-grabbing" : ""}`}
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             onMouseDown={handleMouseDown}
             onMouseLeave={handleMouseLeave}

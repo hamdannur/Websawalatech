@@ -10,8 +10,6 @@ const industries = [
   { label: "Creative Agency",  color: "#e879f9" },
   { label: "Technology",       color: "#60a5fa" },
   { label: "Healthcare",       color: "#f87171" },
-  { label: "Education",        color: "#fb923c" },
-  { label: "Finance",          color: "#a78bfa" },
 ];
 
 const PILL_H = 54;
@@ -83,18 +81,25 @@ export function IndustriesSection() {
     const wallL  = Matter.Bodies.rectangle(-30,   H / 2, 60, H * 4,  { isStatic: true });
     const wallR  = Matter.Bodies.rectangle(W + 30, H / 2, 60, H * 4, { isStatic: true });
 
-    const cols = Math.max(3, Math.floor(W / 240));
     const pillBodies = industries.map((ind, i) => {
       const pw = getPillWidth(ind.label);
-      const col = i % cols;
-      const x   = ((col + 0.5) / cols) * W + (Math.random() - 0.5) * 60;
-      const y   = -PILL_H - Math.floor(i / cols) * 130 - Math.random() * 50;
-      return Matter.Bodies.rectangle(x, y, pw, PILL_H, {
-        restitution: 0.35,
-        friction:    0.55,
-        frictionAir: 0.018,
-        angle: (Math.random() - 0.5) * 0.5,
+      // Spread evenly across full width with per-pill offset for diagonal landing
+      const segment = W / industries.length;
+      const x = segment * i + segment * 0.5 + (Math.random() - 0.5) * segment * 0.6;
+      const y = -PILL_H * 2 - i * 90 - Math.random() * 60;
+      const body = Matter.Bodies.rectangle(x, y, pw, PILL_H, {
+        restitution: 0.18,
+        friction:    0.72,
+        frictionAir: 0.022,
+        angle: (Math.random() - 0.5) * 1.1,  // stronger initial tilt
       });
+      // Lateral kick so each pill drifts sideways and lands at an angle
+      Matter.Body.setVelocity(body, {
+        x: (Math.random() - 0.5) * 5,
+        y: Math.random() * 1.5,
+      });
+      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.12);
+      return body;
     });
 
     Matter.World.add(engine.world, [ground, wallL, wallR, ...pillBodies]);
@@ -108,6 +113,37 @@ export function IndustriesSection() {
 
     Matter.Events.on(mouseConstraint, "startdrag", () => { arena.style.cursor = "grabbing"; });
     Matter.Events.on(mouseConstraint, "enddrag",   () => { arena.style.cursor = ""; });
+
+    const MAX_TILT = Math.PI / 2;
+    const MIN_TILT = 0.18;
+    const tiltSign = industries.map(() => (Math.random() < 0.5 ? 1 : -1));
+    const snapped = new Set<number>();
+
+    Matter.Events.on(engine, "beforeUpdate", () => {
+      pillBodies.forEach((body, i) => {
+        let a = body.angle % (2 * Math.PI);
+        if (a > Math.PI) a -= 2 * Math.PI;
+        if (a < -Math.PI) a += 2 * Math.PI;
+
+        // Clamp max tilt every frame (prevents flipping)
+        if (Math.abs(a) > MAX_TILT) {
+          Matter.Body.setAngle(body, Math.sign(a) * MAX_TILT);
+          Matter.Body.setAngularVelocity(body, 0);
+        }
+
+        // One-time snap to min tilt only when pill has nearly settled
+        if (!snapped.has(i)) {
+          const atRest = Math.abs(body.speed) < 0.4 && Math.abs(body.angularVelocity) < 0.008;
+          if (atRest) {
+            if (Math.abs(a) < MIN_TILT) {
+              Matter.Body.setAngle(body, tiltSign[i] * MIN_TILT);
+              Matter.Body.setAngularVelocity(body, 0);
+            }
+            snapped.add(i); // mark settled — never touch tilt again
+          }
+        }
+      });
+    });
 
     const tick = () => {
       Matter.Engine.update(engine, 1000 / 60);
@@ -166,7 +202,7 @@ export function IndustriesSection() {
         </div>
 
         {/* Physics arena */}
-        <div ref={arenaRef} className="relative w-full overflow-hidden" style={{ height: 420 }}>
+        <div ref={arenaRef} className="relative w-full overflow-visible" style={{ height: 220 }}>
           {industries.map((ind, i) => {
             const pw = getPillWidth(ind.label);
             return (

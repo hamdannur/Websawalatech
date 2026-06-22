@@ -8,6 +8,7 @@ import { IndustriesSection } from "./components/IndustriesSection";
 import { InsightsSection } from "./components/InsightsSection";
 import { CTASection } from "./components/CTASection";
 import { Footer } from "./components/Footer";
+import { CursorFollower } from "./components/CursorFollower";
 
 const Divider = () => (
   <div
@@ -22,6 +23,7 @@ const Divider = () => (
 export default function App() {
   return (
     <div className="w-full overflow-x-hidden bg-[#f1f5f9]">
+      {/* <CursorFollower /> */}
       <Navbar />
       <HeroSection />
       <AboutSection />
