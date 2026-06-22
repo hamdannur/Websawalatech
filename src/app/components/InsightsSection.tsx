@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import articleImg from "figma:asset/769656c19828ef6caa062682f704bea4b1bc61a7.png";
 import svgPaths from "../../imports/Frame170-2/svg-eogjctphdw";
@@ -128,6 +129,19 @@ export function InsightsSection() {
               <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 270.25 130">
                 <path d={svgPaths.pd31ab80} fill="white" />
               </svg>
+            </div>
+            {/* Nav pill */}
+            <div className="absolute bg-white rounded-full z-10" style={{ bottom: 17, right: 10 }}>
+              <div className="flex items-center overflow-clip rounded-[inherit]">
+                <button className="flex items-center justify-center p-[11px] hover:bg-gray-100 transition-colors">
+                  <ChevronLeft size={20} className="text-[#9CA3AF]" strokeWidth={2} />
+                </button>
+                <div className="w-px self-stretch bg-[#e5e7eb]" />
+                <button className="flex items-center justify-center p-[11px] hover:bg-gray-100 transition-colors">
+                  <ChevronRight size={20} className="text-[#9CA3AF]" strokeWidth={2} />
+                </button>
+              </div>
+              <div aria-hidden className="absolute inset-[-0.5px] border border-[#d1d5db] rounded-full pointer-events-none" />
             </div>
           </div>
           {/* Article cards */}

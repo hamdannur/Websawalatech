@@ -33,7 +33,7 @@ function LogoBox({ src, alt }: { src: string; alt: string }) {
 function Column({ offset, logos }: { offset?: boolean; logos: { src: string; alt: string }[] }) {
   return (
     <div className="flex flex-col gap-[clamp(20px,4vw,30px)] items-center shrink-0">
-      {offset && <div className="h-[clamp(35px,6vw,55px)] shrink-0 w-full hidden sm:block" />}
+      {offset && <div className="h-[clamp(35px,6vw,55px)] shrink-0 w-full" />}
       {logos.map((logo, i) => (
         <LogoBox key={i} src={logo.src} alt={logo.alt} />
       ))}
